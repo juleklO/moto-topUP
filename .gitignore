@@ -1,0 +1,4 @@
+.env
+docker/nginx/ssl/*
+!docker/nginx/ssl/.gitkeep
+db_data
