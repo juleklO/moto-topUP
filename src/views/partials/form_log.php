@@ -1,93 +1,122 @@
 <?php
-if (!defined('APP_ROOT')) {
-  define('APP_ROOT', dirname(__DIR__, 2)); // /views/partials -> / (app root)
-}
+// src/views/partials/form_log.php
 
-require_once APP_ROOT . '/models/VehicleModel.php';
+// Expects: $vehicle (array) to determine units
+$unitSystem = $vehicle['system_of_measurement'] ?? 'metric';
+$distUnit = ($unitSystem === 'metric') ? 'km' : 'mi';
+$volUnit  = ($unitSystem === 'metric') ? 'L' : 'gal';
 
-$vehicles = VehicleModel::getAll($pdo);
+// Current time for default value
+$nowValue = date('Y-m-d\TH:i');
 ?>
 
-<?php
-require_once APP_ROOT . '/models/VehicleModel.php';
-require_once APP_ROOT . '/models/LogModel.php';
+<div class="bg-white dark:bg-slate-800 shadow-md rounded-lg p-6 mb-6 border border-slate-200 dark:border-slate-700" 
+     x-data="{ 
+         advanced: false,
+         isFull: true
+     }">
+     
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+            Log Refuel
+        </h2>
+        
+        <button type="button" @click="advanced = !advanced" class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+            <span x-text="advanced ? 'Simple Mode' : 'Advanced Mode'">Advanced Mode</span>
+        </button>
+    </div>
 
-$vehicles = VehicleModel::getAll($pdo);
-if (count($vehicles) === 0) {
-  echo '<div class="bg-moto-panel border border-gray-700 p-4 rounded text-sm text-moto-dim">No vehicles exist yet.</div>';
-  return;
-}
+    <form action="/log/add" method="POST" class="space-y-4">
+        <input type="hidden" name="vehicle_id" value="<?= htmlspecialchars($vehicle['id']) ?>">
 
-$selectedVehicleId = isset($_GET['vehicle_id']) ? (int)$_GET['vehicle_id'] : (int)$vehicles[0]['id'];
-$selectedVehicleId = $selectedVehicleId > 0 ? $selectedVehicleId : (int)$vehicles[0]['id'];
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Date & Time
+                </label>
+                <input type="datetime-local" name="filled_at" value="<?= $nowValue ?>" required
+                       class="w-full rounded-md border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-lg">
+            </div>
 
-$previous = LogModel::getLastOdometer($pdo, $selectedVehicleId);
-$previous = $previous ?? 0;
-?>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Odometer (<?= $distUnit ?>)
+                </label>
+                <div class="relative">
+                    <input type="number" step="0.1" name="odometer" required
+                           class="w-full rounded-md border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-lg"
+                           placeholder="e.g. 12500">
+                </div>
+            </div>
 
-<form
-  hx-post="/api/submit-log"
-  hx-target="#main-content"
-  hx-swap="innerHTML"
-  class="bg-moto-panel p-6 rounded shadow-lg border border-gray-700 animate-fade-in-down"
->
-  <div class="flex justify-between items-end mb-4 border-b border-gray-700 pb-2">
-    <h2 class="text-xl text-moto-accent digital-font">Top Up</h2>
-    <button type="button" hx-get="/dashboard" hx-target="#main-content" class="text-xs text-red-400 hover:underline">CANCEL</button>
-  </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Volume (<?= $volUnit ?>)
+                </label>
+                <input type="number" step="0.001" name="fuel_volume" required
+                       class="w-full rounded-md border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-lg"
+                       placeholder="e.g. 12.5">
+            </div>
+        </div>
 
-  <div class="mb-4">
-    <label class="block text-xs uppercase text-moto-dim mb-1">Vehicle</label>
-    <select name="vehicle_id" class="w-full bg-black/20 border border-gray-600 p-3 rounded text-white focus:border-moto-accent focus:outline-none">
-      <?php foreach ($vehicles as $v): ?>
-        <option value="<?= (int)$v['id'] ?>" <?= ((int)$v['id'] === $selectedVehicleId) ? 'selected' : '' ?>>
-          <?= htmlspecialchars($v['name']) ?>
-        </option>
-      <?php endforeach; ?>
-    </select>
-  </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Total Cost</label>
+                <div class="relative rounded-md shadow-sm">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                        <span class="text-slate-500 sm:text-sm">$</span>
+                    </div>
+                    <input type="number" step="0.01" name="price_total"
+                           class="block w-full rounded-md border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white pl-7 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                           placeholder="0.00">
+                </div>
+            </div>
 
-  <div x-data="{ current: 0, previous: <?= (int)$previous ?> }" class="mb-4">
-    <label class="block text-xs uppercase text-moto-dim mb-1">Odometer</label>
-    <input
-      type="number"
-      name="odometer"
-      x-model.number="current"
-      class="w-full bg-black/20 border border-gray-600 p-3 rounded text-moto-accent font-mono text-lg focus:outline-none focus:border-moto-accent"
-      required
-      min="0"
-    >
-    <p class="text-xs text-moto-dim mt-1">
-      Trip: <span x-text="(current >= previous) ? (current - previous) + ' km' : '---'" class="text-moto-accent"></span>
-      <span class="text-gray-500">(prev: <?= (int)$previous ?>)</span>
-    </p>
-  </div>
+            <div class="flex items-center h-full pt-6">
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="is_full" x-model="isFull" class="sr-only peer" checked>
+                    <div class="relative w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+                    <span class="ms-3 text-sm font-medium text-slate-900 dark:text-slate-300">
+                        Full Tank?
+                    </span>
+                </label>
+            </div>
+        </div>
 
-  <div class="mb-4">
-    <label class="block text-xs uppercase text-moto-dim mb-1">Liters</label>
-    <input
-      type="number"
-      step="0.01"
-      name="liters"
-      class="w-full bg-black/20 border border-gray-600 p-3 rounded text-white focus:outline-none focus:border-moto-accent"
-      required
-      min="0.01"
-    >
-  </div>
+        <div x-show="!isFull" x-transition 
+             class="p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-md text-sm text-yellow-800 dark:text-yellow-200">
+            <strong>Note:</strong> Efficiency won't be calculated for this entry until the next full tank.
+        </div>
 
-  <div class="mb-4 flex gap-4 text-xs text-moto-dim">
-    <label class="flex items-center gap-2">
-      <input type="checkbox" name="is_full" checked>
-      Full tank
-    </label>
-    <label class="flex items-center gap-2">
-      <input type="checkbox" name="missed_previous">
-      Missed previous
-    </label>
-  </div>
+        <div x-show="advanced" x-transition class="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-700">
+            
+            <div class="flex items-start">
+                <div class="flex items-center h-5">
+                    <input id="missed_fill" name="missed_fill" type="checkbox" 
+                           class="w-4 h-4 border border-slate-300 rounded bg-slate-50 focus:ring-3 focus:ring-indigo-300 dark:bg-slate-700 dark:border-slate-600 dark:focus:ring-indigo-600 dark:ring-offset-slate-800">
+                </div>
+                <label for="missed_fill" class="ms-2 text-sm font-medium text-slate-900 dark:text-slate-300">
+                    Missed a previous log? 
+                    <span class="block text-xs text-slate-500 dark:text-slate-400 font-normal">Check this if you forgot to log a fill-up since the last entry. This prevents efficiency calculation errors.</span>
+                </label>
+            </div>
 
-  <button type="submit"
-    class="w-full bg-moto-accent text-black font-bold py-3 rounded shadow hover:bg-yellow-400 transition uppercase tracking-wider digital-font">
-    Save Entry
-  </button>
-</form>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Station / Location</label>
+                <input type="text" name="station_location" 
+                       class="w-full rounded-md border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Notes</label>
+                <textarea name="notes" rows="2" 
+                          class="w-full rounded-md border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+            </div>
+        </div>
+
+        <button type="submit" 
+                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Save Log Entry
+        </button>
+    </form>
+</div>
