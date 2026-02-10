@@ -1,6 +1,14 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;700&display=swap');
 
-/* Optional: Retro Gauge Animation */
-.gauge-needle {
-  transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+@import "tailwindcss";
+@config "../../../tailwind.config.js";
+
+@layer base {
+  body {
+    @apply bg-moto-dark text-moto-chrome font-sans;
+  }
+
+  h1, h2, h3, .digital-font {
+    @apply font-mono uppercase tracking-widest;
+  }
 }
