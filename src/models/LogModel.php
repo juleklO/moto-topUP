@@ -49,4 +49,16 @@ class LogModel {
         $stmt->execute([':vehicle_id' => $vehicle_id]);
         return $stmt->fetchAll();
     }
+    public static function getLastOdometer(PDO $pdo, int $vehicle_id): ?int {
+        $stmt = $pdo->prepare("
+            SELECT odometer
+            FROM fuel_logs
+            WHERE vehicle_id = :vehicle_id
+            ORDER BY log_date DESC
+            LIMIT 1
+        ");
+        $stmt->execute([':vehicle_id' => $vehicle_id]);
+        $row = $stmt->fetch();
+        return $row ? (int)$row['odometer'] : null;
+    }
 }

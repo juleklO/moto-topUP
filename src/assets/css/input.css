@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Optional: Retro Gauge Animation */
+.gauge-needle {
+  transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
