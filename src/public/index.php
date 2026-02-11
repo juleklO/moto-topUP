@@ -23,7 +23,7 @@ switch ($uri) {
     }
     break;
 
-  case '/vehicle/create': 
+case '/vehicle/create': 
   case '/api/vehicle/create': 
     if ($method === 'GET') {
       header('Content-Type: text/html; charset=UTF-8');
@@ -31,10 +31,23 @@ switch ($uri) {
     } 
     elseif ($method === 'POST') {
       require_once APP_ROOT . '/controllers/VehicleController.php';
-      $input = $_POST;
-      $created = VehicleController::create($pdo, $input);
-      header('HX-Trigger: refreshVehicleList');
-      require APP_ROOT . '/views/partials/dashboard.php';
+      
+      try {
+          $created = VehicleController::create($pdo, $_POST);
+          
+          // FIX 3: Check for validation errors gracefully
+          if (isset($created['error'])) {
+              echo '<div class="p-4 mb-4 text-red-500 bg-red-100 rounded border border-red-500">' . htmlspecialchars($created['error']) . '</div>';
+              require APP_ROOT . '/views/partials/form_vehicle.php'; // Re-render the form
+          } else {
+              header('HX-Trigger: refreshVehicleList');
+              require APP_ROOT . '/views/partials/dashboard.php';
+          }
+      } catch (PDOException $e) {
+          // Fallback UI for Database Errors
+          echo '<div class="p-4 mb-4 text-red-500 bg-red-100 rounded border border-red-500">Database Error: ' . htmlspecialchars($e->getMessage()) . '</div>';
+          require APP_ROOT . '/views/partials/form_vehicle.php';
+      }
     }
     break;
 
