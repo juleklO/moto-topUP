@@ -49,16 +49,17 @@ switch ($uri) {
   case '/api/log/create':
     header('Content-Type: text/html; charset=UTF-8');
     $vehicleId = $_GET['vehicle_id'] ?? null;
-    $vehicle = null; // FIXED: Initialize the variable here to prevent undefined warnings
+    $vehicle = null;
     
+    // The query is only run if the Regex check passes in the model
     if ($vehicleId) {
         require_once APP_ROOT . '/models/VehicleModel.php';
         $vehicle = VehicleModel::getById($pdo, $vehicleId);
     }
     
-    // Fallback if no vehicle was found or provided
+    // Graceful visual failure instead of PHP crash
     if (!$vehicle) {
-        echo '<div class="p-4 text-red-500 bg-red-100 rounded-md">Error: Valid Vehicle ID is required to log a refuel.</div>';
+        echo '<div class="p-4 text-red-500 bg-red-100 rounded-md shadow-sm">Ghost request intercepted: Valid UUID required to log refuel.</div>';
         break;
     }
     require APP_ROOT . '/views/partials/form_log.php';
@@ -67,14 +68,14 @@ switch ($uri) {
   case '/service/add':
     require_once APP_ROOT . '/controllers/ServiceController.php';
     $controller = new ServiceController($pdo);
-    $controller->create(); // Handles POST
+    $controller->create();
     break;
 
   case '/service/create':
     header('Content-Type: text/html; charset=UTF-8');
     require_once APP_ROOT . '/controllers/ServiceController.php';
     $controller = new ServiceController($pdo);
-    $controller->create(); // Handles GET view
+    $controller->create();
     break;
 
   case '/api/stats':
