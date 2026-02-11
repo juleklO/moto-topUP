@@ -8,12 +8,6 @@ require_once APP_ROOT . '/models/VehicleModel.php';
 $vehicles = VehicleModel::getAll($pdo);
 ?>
 
-<?php
-require_once APP_ROOT . '/models/VehicleModel.php';
-
-$vehicles = VehicleModel::getAll($pdo);
-?>
-
 <div id="vehicle-list" class="space-y-6">
   <?php if (count($vehicles) === 0): ?>
     <div class="bg-moto-panel rounded-lg shadow-lg border border-gray-700 p-4">
@@ -24,7 +18,7 @@ $vehicles = VehicleModel::getAll($pdo);
 
   <?php foreach ($vehicles as $bike): ?>
     <div class="bg-moto-panel rounded-lg shadow-lg overflow-hidden border border-gray-700"
-         x-data="vehicleStats(<?= (int)$bike['id'] ?>)"
+         x-data="vehicleStats('<?= htmlspecialchars($bike['id']) ?>')"
          x-init="init()">
 
       <div class="p-4 bg-black/20 flex justify-between items-center border-b border-gray-700">
@@ -36,7 +30,7 @@ $vehicles = VehicleModel::getAll($pdo);
         </div>
 
         <button
-          hx-get="/api/log/create?vehicle_id=<?= (int)$bike['id'] ?>"
+          hx-get="/api/log/create?vehicle_id=<?= htmlspecialchars($bike['id']) ?>"
           hx-target="#main-content"
           hx-swap="innerHTML"
           class="bg-moto-dim/20 hover:bg-moto-accent hover:text-black text-moto-accent text-xs px-3 py-2 rounded transition digital-font">
